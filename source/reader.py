@@ -39,7 +39,7 @@ def read_and_decode(filename):
 
     return image, label
 
-def distorted_inputs(data_dir, batch_size):
+def train_inputs(data_dir, batch_size):
     image, label = read_and_decode(data_dir)
 
     min_fraction_of_examples_in_queue = 0.9
@@ -57,7 +57,7 @@ def distorted_inputs(data_dir, batch_size):
         min_after_dequeue=min_queue_examples)
     return image_batch, label_batch
 
-def inputs(data_dir, batch_size):
+def test_inputs(data_dir, batch_size):
     image, label = read_and_decode(data_dir)
 
     min_fraction_of_examples_in_queue = 0.9

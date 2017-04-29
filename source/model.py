@@ -125,7 +125,10 @@ class Model():
 
         tf.add_to_collection('losses', cross_entropy)
 
-        return tf.add_n(tf.get_collection('losses'), name='total_loss') 
+        loss_value = tf.add_n(tf.get_collection('losses'), name='total_loss')
+        tf.summary.scalar('loss', loss_value)
+
+        return loss_value
     
     def train_op(self, total_loss):
         learning_rate = tf.train.exponential_decay(self.starter_learning_rate, self.global_step, 
@@ -140,3 +143,11 @@ class Model():
         
     def cal_accuracy(self, logits):
         return tf.nn.in_top_k(logits, self.label_holder, 1)
+
+    def activation_summary(self, activation):
+        name = activation.op.name
+        tf.summary.histogram(name + '/activations', activation)
+        tf.summary.scalar(name + '/sparsity', tf.nn.zero_fraction(activation))
+
+    def logits_summary(self, logits):
+        pass

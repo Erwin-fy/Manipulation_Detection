@@ -3,23 +3,22 @@ import reader
 import os
 import tensorflow as tf
 import numpy as np
+from datetime import datetime
 import time
 import math
 import model
 
-cwd = os.getcwd()
-dir = os.path.dirname(cwd)
 
 
-#Todo
-#writer.create_record("train")
-#writer.create_record("test")
 
 #Todo
 
 class Config():
+    #data path
+    data_path = '/data/lwq/image-data'
+
     batch_size = 32
-    max_step = 10000
+    max_step = 50000
     
     decay = 0.95
     decay_step = 200
@@ -199,10 +198,12 @@ def init_kernelRes(sess):
 def main():
     config = Config()
 
-    images_train, labels_train = reader.distorted_inputs(data_dir=dir+"/train.tfrecords", batch_size=config.batch_size)
+    #Todo
+    writer.create_record( config.data_path)
 
-    images_test, labels_test = reader.inputs(data_dir=dir+"/test.tfrecords", batch_size=config.batch_size)
+    images_train, labels_train = reader.train_inputs(data_dir="../train.tfrecords", batch_size=config.batch_size)
 
+    images_test, labels_test = reader.test_inputs(data_dir="../test.tfrecords", batch_size=config.batch_size)
 
 
     modeler = model.Model(config)
@@ -228,6 +229,11 @@ def main():
        
         kernelRes_train = init_kernelRes(sess=sess)
 
+        merged = tf.summary.merge_all()
+        logdir = os.path.join(config.log_dir, datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        train_writer = tf.summary.File_Writer(logdir, sess.graph)
+
+
         #train
         print "Start training"
         for step in range(max_step):
@@ -236,12 +242,16 @@ def main():
             with tf.device("/cpu:0"):
                 image_batch, label_batch = sess.run([images_train, labels_train])
                 
+            feed_dict = {
+                modeler.image_holder:image_batch,
+                modeler.label_holder:label_batch,
+                modeler.kernelRes:kernelRes_train,
+                modeler.keep_prob:0.5
+            }
+        
             with tf.device("/gpu:2"):
                 _, loss_value = sess.run([train_op, loss],
-                                            feed_dict={modeler.image_holder:image_batch,
-                                            modeler.label_holder:label_batch,
-                                            modeler.kernelRes:kernelRes_train,
-                                            modeler.keep_prob:0.5})
+                                            feed_dict=feed_dict)
 
             duration = time.time()-start_time
 
@@ -252,12 +262,16 @@ def main():
                 format_str = ('step %d, loss =  %.2f (%.1f examples/sec; %.3f sec/batch)')
                 print format_str % (step, loss_value, examples_per_sec, sec_per_batch)
 
-                #print kernelRes_train
-            
-            if (step+1)%config.checkpoint_iter == 0:
-                saver.save(sess, 
-                        config.params_dir+config.save_filename, 
-                        modeler.global_step.eval())
+            with tf.device("/cpu:0"):
+                #save checkpoint
+                if (step+1)%config.checkpoint_iter == 0:
+                    saver.save(sess, 
+                                config.params_dir+config.save_filename, 
+                                modeler.global_step.eval())
+                #write summary
+                if (step+1)%config.summary_iter == 0:
+                    summary = sess.run(merged, feed_dict=feed_dict)
+                    train_writer.add_summary(summary, modeler.global_step.eval())
 
 
         #test
@@ -265,7 +279,7 @@ def main():
         num_iter = int(math.ceil(num_examples/config.batch_size))
         true_count = 0
         total_sample_count = num_iter*config.batch_size
-        accuracy = np.zeros(5)
+        accuracy = np.zeros(12)
         
         step = 0
         while step < num_iter:
@@ -295,8 +309,11 @@ def main():
             print 'precision @ 1 = %.3f' % precision
             print accuracy
         
-        accuracy = accuracy*5.0/total_sample_count
+        accuracy = accuracy*12.0/total_sample_count
         print accuracy
 
         coord.request_stop()
         coord.join()
+
+if __name__ == "__main__":
+    main()
