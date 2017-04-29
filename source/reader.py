@@ -8,8 +8,8 @@ import os
 import tensorflow as tf
 from PIL import Image
 
-NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 25000
-NUM_EXAMPLES_PER_EPOCH_FOR_TEST = 25000
+NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 240000
+NUM_EXAMPLES_PER_EPOCH_FOR_TEST = 240000
 
 
 def read_and_decode(filename):
@@ -33,7 +33,8 @@ def read_and_decode(filename):
                                        })
 
     image = tf.decode_raw(features['image'], tf.uint8)
-    image = tf.reshape(image, [227, 227, 1])
+    image = tf.reshape(image, [256, 256, 1])
+    image = tf.random_crop(image, [227, 227, 1])
     image = tf.cast(image, tf.float32) * (1. / 255) - 0.5
     label = tf.cast(features['label'], tf.int64)
 

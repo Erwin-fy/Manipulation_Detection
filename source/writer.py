@@ -26,14 +26,13 @@ def create_record(srcDir):
             }))
 
             image_id = string.atoi(img_name[0:len(img_name)-4])
-            print image_id
 
             if image_id <= 20000:
                 train_writer.write(example.SerializeToString())
             else:
                 test_writer.write(example.SerializeToString())
 
-        print img_path, index
+        print img_path, index, image_id
         
     train_writer.close()
     test_writer.close()
