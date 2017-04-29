@@ -86,7 +86,7 @@ class Model():
         with tf.name_scope('fc1') as scope:
             reshape = tf.reshape(lrn2, [self.batch_size, -1])
             dim = reshape.get_shape()[1].value
-            weights = self.variable_with_weight_loss(shape=[dim, 4096], stddev=0.04, wl=0.0)
+            weights = self.variable_with_weight_loss(shape=[dim, 4096], stddev=0.04, wl=0.04)
             #biases = tf.Variable(tf.constant(0.1, shape='4096', dtype=tf.float32), )
             biases = tf.Variable(tf.zeros([4096]), name='biases')
             fc1 = tf.nn.relu(tf.matmul(reshape, weights) + biases, name=scope)
@@ -100,7 +100,7 @@ class Model():
 
         #fc2
         with tf.name_scope('fc2') as scope:
-            weights = self.variable_with_weight_loss(shape=[4096, 4096], stddev=0.04, wl=4)
+            weights = self.variable_with_weight_loss(shape=[4096, 4096], stddev=0.04, wl=0.04)
 
             biases = tf.Variable(tf.zeros([4096]), name='biases')
             fc2 = tf.nn.relu(tf.matmul(fc1, weights) + biases, name=scope)
@@ -114,7 +114,7 @@ class Model():
 
         #fc3
         with tf.name_scope('fc3') as scope:
-            weights = self.variable_with_weight_loss(shape=[4096, 12], stddev=1/4096.0, wl=4)
+            weights = self.variable_with_weight_loss(shape=[4096, 12], stddev=1/4096.0, wl=0.0)
             biases = tf.Variable(tf.zeros([12]), name='biases')
         logits = tf.add(tf.matmul(drop2, weights), biases)
         self.print_activations(logits)
